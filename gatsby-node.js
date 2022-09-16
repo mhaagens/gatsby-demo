@@ -1,30 +1,6 @@
-exports.createPages = async ({ graphql, actions, reporter }) => {
-  await graphql(`
-    {
-      redirects: allSanityRedirect {
-        nodes {
-          fromSlug
-          toSlug
-          toURL
-          isExternal
-          responseType
-        }
-      }
-    }
-  `).then(({ data }) => {
-    data.redirects?.nodes.forEach(
-      ({ fromSlug, isExternal, toURL, toSlug, responseType }) => {
-        const path = isExternal ? toURL : toSlug;
-        actions.createRedirect({
-          fromPath: fromSlug,
-          toPath: path,
-          statusCode: responseType,
-        });
+const { createSanityPages } = require("./gb-node/createSanityPages");
+const { createSanityRedirects } = require("./gb-node/createSanityRedirects");
 
-        reporter.info(
-          `🔗 Redirect [${responseType}] "${fromSlug}" => "${path}".`
-        );
-      }
-    );
-  });
+exports.createPages = async (args) => {
+  Promise.all([createSanityPages(args), createSanityRedirects(args)]);
 };
