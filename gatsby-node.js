@@ -1,8 +1,30 @@
-exports.createPages = async ({ graphql, actions }) => {
-  const { createRedirect } = actions;
+exports.createPages = async ({ graphql, actions, reporter }) => {
+  await graphql(`
+    {
+      redirects: allSanityRedirect {
+        nodes {
+          fromSlug
+          toSlug
+          toURL
+          isExternal
+          responseType
+        }
+      }
+    }
+  `).then(({ data }) => {
+    data.redirects?.nodes.forEach(
+      ({ fromSlug, isExternal, toURL, toSlug, responseType }) => {
+        const path = isExternal ? toURL : toSlug;
+        actions.createRedirect({
+          fromPath: fromSlug,
+          toPath: path,
+          statusCode: responseType,
+        });
 
-  createRedirect({
-    fromPath: `/test-redirect-2`,
-    toPath: `/page-a`,
+        reporter.info(
+          `🔗 Redirect [${responseType}] "${fromSlug}" => "${path}".`
+        );
+      }
+    );
   });
 };
